@@ -71,6 +71,7 @@ final class StatusBarController {
         panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.hasShadow = true
+        panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = false
         panel.contentView = hostingView
         panel.isReleasedWhenClosed = false

@@ -162,61 +162,6 @@ enum PetAssetLibrary {
             actions: discoveredSpineActions(resourceBaseName: "SeeleSpine04", subdirectory: "Resources/Pets/Seele")
         ),
         PetCharacter(
-            id: "ug-live2d",
-            name: "UG Live2D",
-            rendererKind: .live2D,
-            resourceBaseName: "ugofficial.model3",
-            resourceSubdirectory: "Resources/Pets/UG",
-            resourceDirectoryPath: nil,
-            previewColumn: 0,
-            previewRow: 0,
-            actions: discoveredLive2DActions(modelFileName: "ugofficial.model3", subdirectory: "Resources/Pets/UG")
-        ),
-        PetCharacter(
-            id: "ug-pro-live2d",
-            name: "小U Pro",
-            rendererKind: .live2D,
-            resourceBaseName: "ugofficial.model3",
-            resourceSubdirectory: "Resources/Pets/UGPro",
-            resourceDirectoryPath: nil,
-            previewColumn: 0,
-            previewRow: 0,
-            actions: discoveredLive2DActions(modelFileName: "ugofficial.model3", subdirectory: "Resources/Pets/UGPro")
-        ),
-        PetCharacter(
-            id: "miku-free-live2d",
-            name: "Miku Free",
-            rendererKind: .live2D,
-            resourceBaseName: "miku.model3",
-            resourceSubdirectory: "Resources/Pets/MikuFree",
-            resourceDirectoryPath: nil,
-            previewColumn: 0,
-            previewRow: 0,
-            actions: discoveredLive2DActions(modelFileName: "miku.model3", subdirectory: "Resources/Pets/MikuFree")
-        ),
-        PetCharacter(
-            id: "miku-pro-live2d",
-            name: "Miku Pro",
-            rendererKind: .live2D,
-            resourceBaseName: "miku_sample_t04.model3",
-            resourceSubdirectory: "Resources/Pets/MikuPro",
-            resourceDirectoryPath: nil,
-            previewColumn: 0,
-            previewRow: 0,
-            actions: discoveredLive2DActions(modelFileName: "miku_sample_t04.model3", subdirectory: "Resources/Pets/MikuPro")
-        ),
-        PetCharacter(
-            id: "unitychan-live2d",
-            name: "UnityChan",
-            rendererKind: .live2D,
-            resourceBaseName: "unitychan.model3",
-            resourceSubdirectory: "Resources/Pets/UnityChan",
-            resourceDirectoryPath: nil,
-            previewColumn: 0,
-            previewRow: 0,
-            actions: discoveredLive2DActions(modelFileName: "unitychan.model3", subdirectory: "Resources/Pets/UnityChan")
-        ),
-        PetCharacter(
             id: "wanko-live2d",
             name: "Wanko",
             rendererKind: .live2D,
