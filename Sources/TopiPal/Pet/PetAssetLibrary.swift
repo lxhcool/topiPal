@@ -171,6 +171,17 @@ enum PetAssetLibrary {
             previewColumn: 0,
             previewRow: 0,
             actions: discoveredLive2DActions(modelFileName: "wanko_touch.model3", subdirectory: "Resources/Pets/Wanko")
+        ),
+        PetCharacter(
+            id: "ug-pro-live2d",
+            name: "小U Pro",
+            rendererKind: .live2D,
+            resourceBaseName: "ugofficial.model3",
+            resourceSubdirectory: "Resources/Pets/UGPro",
+            resourceDirectoryPath: nil,
+            previewColumn: 0,
+            previewRow: 0,
+            actions: discoveredLive2DActions(modelFileName: "ugofficial.model3", subdirectory: "Resources/Pets/UGPro")
         )
         ]
 
