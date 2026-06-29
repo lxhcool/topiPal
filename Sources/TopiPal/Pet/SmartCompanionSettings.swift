@@ -32,6 +32,10 @@ final class SmartCompanionSettings: ObservableObject {
         }
     }
 
+    @Published var talkativeness: CompanionTalkativeness {
+        didSet { UserDefaults.standard.set(talkativeness.rawValue, forKey: Keys.talkativeness) }
+    }
+
     @Published var isNotificationListeningEnabled: Bool {
         didSet { UserDefaults.standard.set(isNotificationListeningEnabled, forKey: Keys.isNotificationListeningEnabled) }
     }
@@ -59,6 +63,7 @@ final class SmartCompanionSettings: ObservableObject {
         let savedTopics = UserDefaults.standard.stringArray(forKey: Keys.enabledTopics) ?? []
         let topics = Set(savedTopics.compactMap(SmartMessageTopic.init(rawValue:)))
         enabledTopics = topics.isEmpty ? [.comfort, .joke] : topics
+        talkativeness = CompanionTalkativeness(rawValue: UserDefaults.standard.string(forKey: Keys.talkativeness) ?? "") ?? .standard
         isNotificationListeningEnabled = UserDefaults.standard.object(forKey: Keys.isNotificationListeningEnabled) as? Bool ?? true
         notificationAppNames = UserDefaults.standard.string(forKey: Keys.notificationAppNames) ?? "微信,WeChat,飞书,Lark"
         isActivityAwarenessEnabled = UserDefaults.standard.object(forKey: Keys.isActivityAwarenessEnabled) as? Bool ?? true
@@ -77,7 +82,8 @@ final class SmartCompanionSettings: ObservableObject {
             modelName: modelName,
             apiKey: apiKey,
             weatherCity: weatherCity,
-            enabledTopics: enabledTopics
+            enabledTopics: enabledTopics,
+            talkativeness: talkativeness
         )
     }
 
@@ -89,10 +95,35 @@ final class SmartCompanionSettings: ObservableObject {
         static let apiKey = "SmartCompanion.APIKey"
         static let weatherCity = "SmartCompanion.WeatherCity"
         static let enabledTopics = "SmartCompanion.EnabledTopics"
+        static let talkativeness = "SmartCompanion.Talkativeness"
         static let isNotificationListeningEnabled = "SmartCompanion.IsNotificationListeningEnabled"
         static let notificationAppNames = "SmartCompanion.NotificationAppNames"
         static let isActivityAwarenessEnabled = "SmartCompanion.IsActivityAwarenessEnabled"
         static let canReadWindowTitles = "SmartCompanion.CanReadWindowTitles"
+    }
+}
+
+enum CompanionTalkativeness: String, CaseIterable, Identifiable, Sendable {
+    case quiet
+    case standard
+    case active
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .quiet: "安静"
+        case .standard: "标准"
+        case .active: "活跃"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .quiet: "只保留通知和重要提醒。"
+        case .standard: "低频陪伴，不打断工作。"
+        case .active: "更常出现动作和闲聊。"
+        }
     }
 }
 
@@ -167,6 +198,7 @@ struct SmartCompanionConfiguration: Sendable {
     let apiKey: String
     let weatherCity: String
     let enabledTopics: Set<SmartMessageTopic>
+    let talkativeness: CompanionTalkativeness
 
     var canRequestModel: Bool {
         isEnabled

@@ -39,13 +39,13 @@ enum SmartMessageService {
 
         let activityLine = activity.map { "\($0.mode.title)，当前应用：\($0.appName ?? "未知")" } ?? "未知"
         let prompt = """
-        你是一个会观察桌面状态的 2D 桌面宠物。根据真实天气，在合适时间轻轻提醒用户一句。
+        你是一个桌面宠物。根据真实天气，在合适时间提醒用户一句。
         时间段：\(moment.promptName)
         当前活动：\(activityLine)
         心情：\(memory.mood.rawValue)
         天气：\(weather)
 
-        要求：不要编造天气；语气有趣但不油；不要说教；不要解释；不要引号；不要 emoji；28 个汉字以内。
+        要求：不要编造天气；短句；直白；不要比喻；不要谜语；不要说教；不要解释；不要引号；不要 emoji；28 个汉字以内。
         """
         let message = try? await ChatCompletionClient(configuration: configuration).complete(prompt: prompt)
         return sanitizeBubbleMessage(message, fallback: "", maxLength: 28)
@@ -79,9 +79,9 @@ enum SmartMessageService {
         }
 
         let prompt = """
-        你是一个安静但有性格的桌面宠物。用户刚刚点击了你的\(areaName)。
-        写一句像真实陪伴者的中文气泡文案，要有一点观察感。
-        要求：16 个汉字以内；不要泛泛加油；不要解释；不要引号；不要 emoji；不要提到 AI。
+        你是一个桌面宠物。用户刚刚点击了你的\(areaName)。
+        写一句中文反馈。
+        要求：16 个汉字以内；直白；不要比喻；不要谜语；不要泛泛加油；不要解释；不要引号；不要 emoji；不要提到 AI。
         """
         return try? await ChatCompletionClient(configuration: configuration).complete(prompt: prompt)
     }
@@ -93,7 +93,7 @@ enum SmartMessageService {
 
         do {
             let message = try await ChatCompletionClient(configuration: configuration).complete(
-                prompt: "写一句 12 个汉字以内的中文桌面宠物问候。不要引号，不要 emoji。"
+                prompt: "写一句 12 个汉字以内的中文桌面宠物问候。直白，不要比喻，不要引号，不要 emoji。"
             )
             guard let message, !message.isEmpty else {
                 return .failure("模型返回为空")
@@ -114,24 +114,24 @@ enum SmartMessageService {
         switch topic {
         case .joke:
             return """
-            你是一个安静但有性格的桌面宠物。写一句轻松的中文冷笑话气泡文案。
-            要求：24 个汉字以内；像随口吐槽；不要解释；不要引号；不要 emoji；不要网络烂梗。
+            你是一个桌面宠物。写一句轻松的中文短句。
+            要求：24 个汉字以内；直白；不要比喻；不要谜语；不要解释；不要引号；不要 emoji；不要网络烂梗。
             """
         case .weather:
             return """
-            你是一个桌面宠物。根据真实天气写一句关心用户的中文气泡文案。
+            你是一个桌面宠物。根据真实天气写一句中文提醒。
             天气信息：\(weather ?? "")
-            要求：26 个汉字以内；不要编造天气；不要解释；不要引号；不要 emoji。
+            要求：26 个汉字以内；直白；不要编造天气；不要比喻；不要谜语；不要解释；不要引号；不要 emoji。
             """
         case .comfort:
             return """
-            你是一个安静但有性格的桌面宠物。写一句温柔但不油腻的中文安慰文案。
-            要求：22 个汉字以内；像陪在旁边；不要说教；不要引号；不要 emoji；不要提到 AI。
+            你是一个桌面宠物。写一句温和的中文提醒。
+            要求：22 个汉字以内；直白；不要比喻；不要谜语；不要说教；不要引号；不要 emoji；不要提到 AI。
             """
         case .focus:
             return """
-            你是一个安静但有性格的桌面宠物。写一句轻量的工作陪伴提醒。
-            要求：20 个汉字以内；像朋友提醒；不要命令；不要引号；不要 emoji。
+            你是一个桌面宠物。写一句轻量的工作提醒。
+            要求：20 个汉字以内；直白；不要比喻；不要谜语；不要命令；不要引号；不要 emoji。
             """
         }
     }
@@ -153,7 +153,7 @@ enum SmartMessageService {
         let weatherLine = weather.map { "天气：\($0)" } ?? "天气：无"
 
         return """
-        你是一个会观察桌面状态的 2D 桌面宠物。下面是本地生成的气泡草稿，请只做一次自然改写。
+        你是一个桌面宠物。下面是本地生成的气泡草稿，请只做一次自然改写。
         事件：\(event.promptName)
         活动：\(activityLine)
         心情：\(memory.mood.rawValue)，点击连续次数：\(memory.tapStreak)，消息连续次数：\(memory.notificationStreak)
@@ -163,9 +163,10 @@ enum SmartMessageService {
 
         要求：
         1. 必须保留草稿含义和当前事件，不要改成无关话题。
-        2. 语气像一个有性格但不吵闹的桌面宠物，可以有一点机灵和观察感。
-        3. 不要解释，不要引号，不要 emoji，不要提到 AI 或模型。
-        4. \(event.maxLength) 个汉字以内。
+        2. 必须直白，用户一眼能看懂。
+        3. 不要比喻，不要谜语，不要抽象表达，不要网络烂梗。
+        4. 不要解释，不要引号，不要 emoji，不要提到 AI 或模型。
+        5. \(event.maxLength) 个汉字以内。
         """
     }
 
@@ -290,10 +291,10 @@ private struct ChatCompletionClient {
             ChatCompletionRequest(
                 model: configuration.modelName,
                 messages: [
-                    ChatMessage(role: "system", content: "直接输出最终桌面宠物气泡文案。不要输出推理过程、解释、前后缀或引号。"),
+                    ChatMessage(role: "system", content: "直接输出最终桌面宠物气泡文案。要求短、直白、能一眼看懂。不要输出推理过程、解释、前后缀或引号。"),
                     ChatMessage(role: "user", content: prompt)
                 ],
-                temperature: 0.85,
+                temperature: 0.55,
                 maxTokens: 256
             )
         )

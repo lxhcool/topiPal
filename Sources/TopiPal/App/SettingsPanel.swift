@@ -387,6 +387,26 @@ private struct SmartSettingsSection: View {
 
                     Divider().overlay(Color.white.opacity(0.06))
 
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("打扰强度")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.primary)
+
+                        Picker("", selection: $settings.talkativeness) {
+                            ForEach(CompanionTalkativeness.allCases) { level in
+                                Text(level.title).tag(level)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+
+                        Text(settings.talkativeness.description)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Divider().overlay(Color.white.opacity(0.06))
+
                     SettingsTextField(title: "天气城市", text: $settings.weatherCity, placeholder: "例如：上海")
                 }
             }

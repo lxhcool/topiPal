@@ -56,6 +56,8 @@ final class PetModel: ObservableObject {
     private var lastNotificationAppName: String?
     private var lastRelationshipTapCreditDate: Date?
     private var lastRelationshipNotificationCreditDateByApp: [String: Date] = [:]
+    private var lastAmbientBubbleDate: Date?
+    private var lastAutoActionBubbleDate: Date?
     private var deliveredWeatherMoments: Set<String> = []
     private var deliveredLifeMoments: Set<String> = []
     private var relationshipMemory = PetRelationshipMemory.load()
@@ -244,7 +246,8 @@ final class PetModel: ObservableObject {
         autoActionTask?.cancel()
         autoActionTask = Task { [weak self] in
             while !Task.isCancelled {
-                let delay = UInt64(Int.random(in: 15...35)) * 1_000_000_000
+                let delayRange = await MainActor.run { self?.autoActionDelayRange ?? 40...90 }
+                let delay = UInt64(Int.random(in: delayRange)) * 1_000_000_000
                 try? await Task.sleep(nanoseconds: delay)
                 await MainActor.run {
                     guard let self else { return }
@@ -259,7 +262,7 @@ final class PetModel: ObservableObject {
         ambientTask?.cancel()
         ambientTask = Task { [weak self] in
             while !Task.isCancelled {
-                let interval = await MainActor.run { self?.runtimeState.speakInterval ?? 18...35 }
+                let interval = await MainActor.run { self?.ambientDelayRange ?? 120...240 }
                 let delay = UInt64(Int.random(in: interval)) * 1_000_000_000
                 try? await Task.sleep(nanoseconds: delay)
                 guard !Task.isCancelled else { return }
@@ -288,6 +291,7 @@ final class PetModel: ObservableObject {
                     )
                     await MainActor.run {
                         guard let self, self.phase == .compact else { return }
+                        guard self.canShowAmbientBubble(important: true) else { return }
                         self.markLifeMomentDelivered(lifeMoment)
                         let revision = self.showBubble(localMessage, cancelsSmartRewrite: true)
                         let configuration = state.1
@@ -318,6 +322,7 @@ final class PetModel: ObservableObject {
                     )
                     await MainActor.run {
                         guard let self, self.phase == .compact, let weatherMessage else { return }
+                        guard self.canShowAmbientBubble(important: true) else { return }
                         self.markWeatherMomentDelivered(weatherMoment)
                         self.showBubble(weatherMessage, cancelsSmartRewrite: true)
                     }
@@ -326,6 +331,7 @@ final class PetModel: ObservableObject {
 
                 await MainActor.run {
                     guard let self, self.phase == .compact else { return }
+                    guard self.canShowAmbientBubble(important: false) else { return }
                     if let message = state.2 {
                         let revision = self.showBubble(message, cancelsSmartRewrite: true)
                         let configuration = state.1
@@ -396,31 +402,95 @@ final class PetModel: ObservableObject {
         activeAction == nil || activeAction == selectedCharacter.defaultAction
     }
 
+    private var ambientDelayRange: ClosedRange<Int> {
+        let base: ClosedRange<Int>
+        switch smartSettings.talkativeness {
+        case .quiet:
+            base = 300...600
+        case .standard:
+            base = 120...240
+        case .active:
+            base = 55...120
+        }
+
+        let stateRange = runtimeState.speakInterval
+        let lower = max(base.lowerBound, stateRange.lowerBound)
+        let upper = max(lower, max(base.upperBound, stateRange.upperBound))
+        return lower...upper
+    }
+
+    private var autoActionDelayRange: ClosedRange<Int> {
+        switch smartSettings.talkativeness {
+        case .quiet:
+            120...240
+        case .standard:
+            55...110
+        case .active:
+            25...55
+        }
+    }
+
     private func performRandomAutoAction() {
         let candidates = autoActionCandidates()
         guard let candidate = candidates.randomElement() else { return }
         messageMemory.energy = max(0, messageMemory.energy - 3)
-        let localMessage = PetMessageComposer.autoActionMessage(area: candidate.area, memory: messageMemory)
-        let revision = showBubble(localMessage, cancelsSmartRewrite: true)
-        let configuration = smartSettings.snapshot()
-        if configuration.canRequestModel {
-            let activityContext = activityContext
-            let memory = messageMemory
-            smartBubbleTask = Task { [weak self] in
-                let message = await SmartMessageService.rewriteMessage(
-                    draft: localMessage,
-                    event: .autoAction(candidate.area),
-                    activity: activityContext,
-                    memory: memory,
-                    configuration: configuration
-                )
-                await MainActor.run {
-                    guard let self, let message else { return }
-                    self.updateBubble(message, matching: revision)
+        if shouldSpeakForAutoAction() {
+            let localMessage = PetMessageComposer.autoActionMessage(area: candidate.area, memory: messageMemory)
+            let revision = showBubble(localMessage, cancelsSmartRewrite: true)
+            lastAutoActionBubbleDate = Date()
+            let configuration = smartSettings.snapshot()
+            if configuration.canRequestModel {
+                let activityContext = activityContext
+                let memory = messageMemory
+                smartBubbleTask = Task { [weak self] in
+                    let message = await SmartMessageService.rewriteMessage(
+                        draft: localMessage,
+                        event: .autoAction(candidate.area),
+                        activity: activityContext,
+                        memory: memory,
+                        configuration: configuration
+                    )
+                    await MainActor.run {
+                        guard let self, let message else { return }
+                        self.updateBubble(message, matching: revision)
+                    }
                 }
             }
         }
         playAction(candidate.action)
+    }
+
+    private func canShowAmbientBubble(important: Bool) -> Bool {
+        guard bubbleMessage == nil else { return false }
+        if smartSettings.talkativeness == .quiet && !important {
+            return false
+        }
+
+        let now = Date()
+        let minimumInterval: TimeInterval = important ? 60 : {
+            switch smartSettings.talkativeness {
+            case .quiet: return 600
+            case .standard: return 180
+            case .active: return 75
+            }
+        }()
+
+        if let lastAmbientBubbleDate, now.timeIntervalSince(lastAmbientBubbleDate) < minimumInterval {
+            return false
+        }
+
+        lastAmbientBubbleDate = now
+        return true
+    }
+
+    private func shouldSpeakForAutoAction() -> Bool {
+        guard bubbleMessage == nil else { return false }
+        guard smartSettings.talkativeness == .active else { return false }
+        let now = Date()
+        if let lastAutoActionBubbleDate, now.timeIntervalSince(lastAutoActionBubbleDate) < 180 {
+            return false
+        }
+        return Int.random(in: 0..<100) < 25
     }
 
     private func autoActionCandidates() -> [(area: PetHitArea, action: String)] {
