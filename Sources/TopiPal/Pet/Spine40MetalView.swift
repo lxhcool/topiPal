@@ -98,12 +98,12 @@ struct Spine40MetalView: NSViewRepresentable {
                 atlasURL = directory.appendingPathComponent("\(character.resourceBaseName).atlas")
                 skeletonURL = directory.appendingPathComponent("\(character.resourceBaseName).skel")
             } else {
-                atlasURL = Bundle.module.url(
+                atlasURL = AppResourceBundle.module.url(
                     forResource: character.resourceBaseName,
                     withExtension: "atlas",
                     subdirectory: character.resourceSubdirectory
                 )
-                skeletonURL = Bundle.module.url(
+                skeletonURL = AppResourceBundle.module.url(
                     forResource: character.resourceBaseName,
                     withExtension: "skel",
                     subdirectory: character.resourceSubdirectory

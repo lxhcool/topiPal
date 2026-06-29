@@ -303,7 +303,7 @@ enum PetAssetLibrary {
         if let resourceDirectoryPath = character.resourceDirectoryPath {
             return URL(fileURLWithPath: resourceDirectoryPath, isDirectory: true)
         }
-        return Bundle.module.url(forResource: character.resourceSubdirectory, withExtension: nil)
+        return AppResourceBundle.module.url(forResource: character.resourceSubdirectory, withExtension: nil)
     }
 
     static func previewImageURL(for character: PetCharacter) -> URL? {
@@ -341,12 +341,12 @@ enum PetAssetLibrary {
     }
 
     private static func discoveredSpineActions(resourceBaseName: String, subdirectory: String) -> [String] {
-        guard let atlasURL = Bundle.module.url(
+        guard let atlasURL = AppResourceBundle.module.url(
             forResource: resourceBaseName,
             withExtension: "atlas",
             subdirectory: subdirectory
         ),
-              let skeletonURL = Bundle.module.url(
+              let skeletonURL = AppResourceBundle.module.url(
             forResource: resourceBaseName,
             withExtension: "skel",
             subdirectory: subdirectory
@@ -381,12 +381,12 @@ enum PetAssetLibrary {
     }
 
     private static func discoveredSpine40Actions(resourceBaseName: String, subdirectory: String) -> [String] {
-        guard let atlasURL = Bundle.module.url(
+        guard let atlasURL = AppResourceBundle.module.url(
             forResource: resourceBaseName,
             withExtension: "atlas",
             subdirectory: subdirectory
         ),
-              let skeletonURL = Bundle.module.url(
+              let skeletonURL = AppResourceBundle.module.url(
                 forResource: resourceBaseName,
                 withExtension: "skel",
                 subdirectory: subdirectory
@@ -403,7 +403,7 @@ enum PetAssetLibrary {
     }
 
     private static func discoveredLive2DActions(modelFileName: String, subdirectory: String) -> [String] {
-        let url = Bundle.module.url(forResource: modelFileName, withExtension: "json", subdirectory: subdirectory)
+        let url = AppResourceBundle.module.url(forResource: modelFileName, withExtension: "json", subdirectory: subdirectory)
         return discoveredLive2DActions(manifestURL: url)
     }
 

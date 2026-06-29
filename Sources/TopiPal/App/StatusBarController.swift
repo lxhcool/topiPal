@@ -117,7 +117,7 @@ final class StatusBarController {
     }
 
     private static func statusBarImage() -> NSImage? {
-        let image = Bundle.module.url(forResource: "MenuBarIcon", withExtension: "png", subdirectory: "App")
+        let image = AppResourceBundle.module.url(forResource: "MenuBarIcon", withExtension: "png", subdirectory: "App")
             .flatMap(NSImage.init(contentsOf:))
             ?? NSImage(systemSymbolName: "sparkle", accessibilityDescription: "TopiPal")
         image?.size = NSSize(width: 18, height: 18)

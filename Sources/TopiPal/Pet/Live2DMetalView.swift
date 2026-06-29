@@ -123,7 +123,7 @@ struct Live2DMetalView: NSViewRepresentable {
             if let directory = PetAssetLibrary.resourceDirectory(for: character) {
                 manifestURL = directory.appendingPathComponent("\(character.resourceBaseName).json")
             } else {
-                manifestURL = Bundle.module.url(
+                manifestURL = AppResourceBundle.module.url(
                     forResource: character.resourceBaseName,
                     withExtension: "json",
                     subdirectory: character.resourceSubdirectory
