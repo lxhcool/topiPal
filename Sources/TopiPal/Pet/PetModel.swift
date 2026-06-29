@@ -187,45 +187,15 @@ final class PetModel: ObservableObject {
         messageMemory.tapStreak = tapCount
         messageMemory.lastArea = area
         messageMemory.energy = min(100, messageMemory.energy + 4)
-        let leveledUp = recordRelationshipTapIfNeeded(area: area, at: now)
+        _ = recordRelationshipTapIfNeeded(area: area, at: now)
         messageMemory.mood = PetMessageComposer.nextMood(
             afterInteraction: area,
             tapStreak: tapCount,
             hour: Calendar.current.component(.hour, from: now)
         )
 
-        let localMessage = leveledUp.map {
-            PetMessageComposer.relationshipLevelUpMessage(level: $0, memory: messageMemory)
-        } ?? PetMessageComposer.interactionMessage(
-            context: PetInteractionContext(
-                area: area,
-                hour: Calendar.current.component(.hour, from: now),
-                memory: messageMemory
-            )
-        )
-        let revision = showBubble(localMessage, cancelsSmartRewrite: true)
         interactionSequence += 1
-        let interactionSequence = interactionSequence
-
-        let configuration = smartSettings.snapshot()
-        if configuration.canRequestModel {
-            let activityContext = activityContext
-            let memory = messageMemory
-            smartBubbleTask = Task { [weak self] in
-                let message = await SmartMessageService.rewriteMessage(
-                    draft: localMessage,
-                    event: .interaction(area),
-                    activity: activityContext,
-                    memory: memory,
-                    configuration: configuration
-                )
-                await MainActor.run {
-                    guard let self, let message else { return }
-                    guard self.interactionSequence == interactionSequence else { return }
-                    self.updateBubble(message, matching: revision)
-                }
-            }
-        }
+        smartBubbleTask?.cancel()
 
         if let action = selectedCharacter.action(for: area) {
             playAction(action)
