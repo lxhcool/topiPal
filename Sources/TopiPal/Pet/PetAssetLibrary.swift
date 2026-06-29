@@ -74,6 +74,60 @@ struct PetCharacter: Identifiable, Equatable {
         }
     }
 
+    func actionDisplayName(_ action: String) -> String {
+        if let name = Self.preferredActionDisplayNames[action] {
+            return name
+        }
+
+        let lowercased = action.lowercased()
+        if lowercased.contains("idle") || lowercased == "motion-1" {
+            return "待机"
+        }
+        if lowercased.contains("tap") {
+            return "点击"
+        }
+        if lowercased.contains("flickleft") || lowercased.contains("left") {
+            return "左侧互动"
+        }
+        if lowercased.contains("flickright") || lowercased.contains("right") {
+            return "右侧互动"
+        }
+        if lowercased.contains("flickup") {
+            return "上方互动"
+        }
+        if lowercased.contains("flick") {
+            return "轻拂"
+        }
+        if lowercased.contains("shake") {
+            return "摇晃"
+        }
+        if lowercased.contains("wave") {
+            return "挥手"
+        }
+        if lowercased.contains("clap") {
+            return "鼓掌"
+        }
+        if lowercased.contains("cheer") {
+            return "欢呼"
+        }
+        if lowercased.contains("thinking") {
+            return "思考"
+        }
+        if lowercased.contains("crossarms") {
+            return "抱臂"
+        }
+        if lowercased.contains("aerobics") {
+            return "运动"
+        }
+        if lowercased.contains("meditation") {
+            return "冥想"
+        }
+        if lowercased.contains("walk") {
+            return "走动"
+        }
+        return action
+    }
+
     private func findAnim(containing keywords: [String]) -> String? {
         for keyword in keywords {
             if let match = actions.first(where: { $0.localizedCaseInsensitiveContains(keyword) }) {
@@ -108,6 +162,43 @@ struct PetCharacter: Identifiable, Equatable {
         }
         return nil
     }
+
+    private static let preferredActionDisplayNames: [String: String] = [
+        "1desk": "趴桌",
+        "2mic": "麦克风",
+        "3clever": "得意",
+        "4OAO": "惊讶",
+        "5QAQ": "委屈",
+        "6i gi a ri": "异议",
+        "7keyboard": "敲键盘",
+        "8punch": "出拳",
+        "9": "+1",
+        "Idle-1": "待机 1",
+        "Idle-2": "待机 2",
+        "Idle-3": "待机 3",
+        "Flick3-1": "轻触 1",
+        "Flick3-2": "轻触 2",
+        "Shake-1": "摇晃",
+        "FlickUp-1": "上方互动",
+        "Tap-1": "点击 1",
+        "Tap-2": "点击 2",
+        "Flick-1": "轻拂 1",
+        "Flick-2": "轻拂 2",
+        "FlickLeft-1": "左侧互动",
+        "motion-1": "待机循环",
+        "motion-2": "待机循环 2",
+        "WaveHands": "挥手",
+        "Thinking": "思考",
+        "Cheer": "欢呼",
+        "WaveClaws": "挥爪",
+        "Clap": "鼓掌",
+        "CrossArms": "抱臂",
+        "Transporting": "搬运",
+        "Aerobics": "运动",
+        "Meditation": "冥想",
+        "walking_default": "走动",
+        "walking_left": "向左走"
+    ]
 }
 
 enum PetAssetLibrary {

@@ -264,7 +264,7 @@ struct SettingsPanelView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 14) {
                         ActionInventoryView(
-                            actions: character.actions,
+                            character: character,
                             onTest: { action in
                                 model.testAction(action, for: character)
                             }
@@ -275,6 +275,7 @@ struct SettingsPanelView: View {
                         VStack(spacing: 10) {
                             ForEach(PetHitArea.allCases, id: \.self) { area in
                                 ClickActionMappingRow(
+                                    character: character,
                                     area: area,
                                     actions: character.actions,
                                     selection: Binding(
@@ -889,7 +890,7 @@ private struct ResourceImportRow: View {
 }
 
 private struct ActionInventoryView: View {
-    let actions: [String]
+    let character: PetCharacter
     let onTest: (String) -> Void
 
     private let columns = [
@@ -906,7 +907,7 @@ private struct ActionInventoryView: View {
 
                 Spacer()
 
-                Text("\(actions.count)")
+                Text("\(character.actions.count)")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
@@ -916,7 +917,7 @@ private struct ActionInventoryView: View {
 
             ScrollView(.vertical, showsIndicators: true) {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-                    ForEach(actions, id: \.self) { action in
+                    ForEach(character.actions, id: \.self) { action in
                         Button {
                             onTest(action)
                         } label: {
@@ -926,15 +927,25 @@ private struct ActionInventoryView: View {
                                     .foregroundStyle(.secondary)
                                     .frame(width: 14)
 
-                                Text(action)
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(character.actionDisplayName(action))
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+
+                                    if character.actionDisplayName(action) != action {
+                                        Text(action)
+                                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                    }
+                                }
 
                                 Spacer(minLength: 0)
                             }
-                            .frame(height: 28)
+                            .frame(height: 34)
                             .padding(.horizontal, 9)
                             .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                             .overlay(
@@ -945,7 +956,7 @@ private struct ActionInventoryView: View {
                         }
                         .buttonStyle(.plain)
                         .pointingHandCursor()
-                        .help("播放 \(action)")
+                        .help("播放 \(character.actionDisplayName(action)) · \(action)")
                     }
                 }
                 .padding(.trailing, 4)
@@ -958,6 +969,7 @@ private struct ActionInventoryView: View {
 private struct ClickActionMappingRow: View {
     static let automaticValue = "__automatic__"
 
+    let character: PetCharacter
     let area: PetHitArea
     let actions: [String]
     @Binding var selection: String
@@ -986,7 +998,7 @@ private struct ClickActionMappingRow: View {
             Picker("", selection: $selection) {
                 Text("自动匹配").tag(Self.automaticValue)
                 ForEach(actions, id: \.self) { action in
-                    Text(action).tag(action)
+                    Text(character.actionDisplayName(action)).tag(action)
                 }
             }
             .labelsHidden()
@@ -1012,9 +1024,10 @@ private struct ClickActionMappingRow: View {
 
     private var statusText: String {
         if selection == Self.automaticValue {
-            return "当前：\(resolvedAction ?? "无匹配")"
+            guard let resolvedAction else { return "当前：无匹配" }
+            return "当前：\(character.actionDisplayName(resolvedAction))"
         }
-        return "已指定：\(selection)"
+        return "已指定：\(character.actionDisplayName(selection))"
     }
 }
 
