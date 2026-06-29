@@ -226,6 +226,15 @@ final class PetModel: ObservableObject {
         playAction(action)
     }
 
+    func testAction(_ action: String, for character: PetCharacter) {
+        guard character.actions.contains(action) else { return }
+        if selectedCharacterID != character.id {
+            selectedCharacterID = character.id
+            activeAction = character.defaultAction
+        }
+        playAction(action)
+    }
+
     func handleTap(in area: PetHitArea) {
         let now = Date()
         if let lastTapDate, now.timeIntervalSince(lastTapDate) <= 3 {

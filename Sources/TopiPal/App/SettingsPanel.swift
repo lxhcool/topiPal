@@ -119,26 +119,31 @@ struct SettingsPanelView: View {
     }
 
     private var characterSection: some View {
-        SettingsCard(title: "内置角色", icon: "person.crop.square") {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12)
-                ],
-                spacing: 12
-            ) {
-                ForEach(model.characters) { character in
-                    CharacterSelectionCard(
-                        character: character,
-                        isSelected: character.id == model.selectedCharacterID,
-                        onDelete: character.isCustom ? {
-                            model.deleteCharacter(character)
-                        } : nil
-                    ) {
-                        model.selectCharacter(character)
+        VStack(spacing: 16) {
+            SettingsCard(title: "角色库", icon: "person.crop.square") {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12)
+                    ],
+                    spacing: 12
+                ) {
+                    ForEach(model.characters) { character in
+                        CharacterSelectionCard(
+                            character: character,
+                            isSelected: character.id == model.selectedCharacterID,
+                            onDelete: character.isCustom ? {
+                                model.deleteCharacter(character)
+                            } : nil
+                        ) {
+                            model.selectCharacter(character)
+                            actionConfigCharacterID = character.id
+                        }
                     }
                 }
             }
+
+            clickActionSection
         }
     }
 
@@ -203,8 +208,6 @@ struct SettingsPanelView: View {
                 }
             }
 
-            clickActionSection
-
             if let importErrorMessage = model.importErrorMessage {
                 SettingsCard(title: "导入结果", icon: "exclamationmark.triangle") {
                     Text(importErrorMessage)
@@ -218,7 +221,7 @@ struct SettingsPanelView: View {
                     SpecLine(title: "序列帧", value: "角色目录 / 动作目录 / PNG 帧。动作名等于文件夹名。")
                     SpecLine(title: "Spine", value: "同一目录放 .skel/.json、.atlas、贴图 PNG。")
                     SpecLine(title: "Live2D", value: "以 model3.json 为入口读取模型、动作和表情。")
-                    SpecLine(title: "点击动作", value: "导入后在上方为每个点击区域选择动作；不设置时使用自动匹配。")
+                    SpecLine(title: "点击动作", value: "导入后到角色页配置每个点击区域触发的动作。")
                 }
             }
         }
@@ -259,28 +262,39 @@ struct SettingsPanelView: View {
                         value: "这个角色没有可配置的动作。请检查资源目录是否包含有效动作。"
                     )
                 } else {
-                    VStack(spacing: 10) {
-                        ForEach(PetHitArea.allCases, id: \.self) { area in
-                            ClickActionMappingRow(
-                                area: area,
-                                actions: character.actions,
-                                selection: Binding(
-                                    get: {
-                                        model.clickActionSelection(for: character, area: area) ?? ClickActionMappingRow.automaticValue
-                                    },
-                                    set: { value in
-                                        model.setClickAction(
-                                            value == ClickActionMappingRow.automaticValue ? nil : value,
-                                            for: character,
-                                            area: area
-                                        )
+                    VStack(alignment: .leading, spacing: 14) {
+                        ActionInventoryView(
+                            actions: character.actions,
+                            onTest: { action in
+                                model.testAction(action, for: character)
+                            }
+                        )
+
+                        Divider().overlay(Color.white.opacity(0.06))
+
+                        VStack(spacing: 10) {
+                            ForEach(PetHitArea.allCases, id: \.self) { area in
+                                ClickActionMappingRow(
+                                    area: area,
+                                    actions: character.actions,
+                                    selection: Binding(
+                                        get: {
+                                            model.clickActionSelection(for: character, area: area) ?? ClickActionMappingRow.automaticValue
+                                        },
+                                        set: { value in
+                                            model.setClickAction(
+                                                value == ClickActionMappingRow.automaticValue ? nil : value,
+                                                for: character,
+                                                area: area
+                                            )
+                                        }
+                                    ),
+                                    resolvedAction: model.resolvedClickAction(for: character, area: area),
+                                    onTest: {
+                                        model.testClickAction(for: character, area: area)
                                     }
-                                ),
-                                resolvedAction: model.resolvedClickAction(for: character, area: area),
-                                onTest: {
-                                    model.testClickAction(for: character, area: area)
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
@@ -870,6 +884,73 @@ private struct ResourceImportRow: View {
                 action()
             }
             .buttonStyle(SettingsButtonStyle())
+        }
+    }
+}
+
+private struct ActionInventoryView: View {
+    let actions: [String]
+    let onTest: (String) -> Void
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("动作列表", systemImage: "list.bullet.rectangle")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text("\(actions.count)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(.white.opacity(0.08), in: Capsule())
+            }
+
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                    ForEach(actions, id: \.self) { action in
+                        Button {
+                            onTest(action)
+                        } label: {
+                            HStack(spacing: 7) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 14)
+
+                                Text(action)
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+
+                                Spacer(minLength: 0)
+                            }
+                            .frame(height: 28)
+                            .padding(.horizontal, 9)
+                            .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                            )
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .pointingHandCursor()
+                        .help("播放 \(action)")
+                    }
+                }
+                .padding(.trailing, 4)
+            }
+            .frame(maxHeight: 126)
         }
     }
 }
