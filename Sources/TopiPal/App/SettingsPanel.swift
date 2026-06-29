@@ -7,6 +7,7 @@ struct SettingsPanelView: View {
     let onClose: () -> Void
 
     @State private var selectedSection: SettingsSection = .characters
+    @State private var actionConfigCharacterID = ""
 
     var body: some View {
         HStack(spacing: 0) {
@@ -202,6 +203,8 @@ struct SettingsPanelView: View {
                 }
             }
 
+            clickActionSection
+
             if let importErrorMessage = model.importErrorMessage {
                 SettingsCard(title: "导入结果", icon: "exclamationmark.triangle") {
                     Text(importErrorMessage)
@@ -215,10 +218,91 @@ struct SettingsPanelView: View {
                     SpecLine(title: "序列帧", value: "角色目录 / 动作目录 / PNG 帧。动作名等于文件夹名。")
                     SpecLine(title: "Spine", value: "同一目录放 .skel/.json、.atlas、贴图 PNG。")
                     SpecLine(title: "Live2D", value: "以 model3.json 为入口读取模型、动作和表情。")
-                    SpecLine(title: "命中区域", value: "后续会在这里配置头、身体、左右、脚分别触发哪个已有动作。")
+                    SpecLine(title: "点击动作", value: "导入后在上方为每个点击区域选择动作；不设置时使用自动匹配。")
                 }
             }
         }
+    }
+
+    private var clickActionSection: some View {
+        let character = actionConfigCharacter
+
+        return SettingsCard(title: "点击动作", icon: "hand.tap") {
+            VStack(spacing: 14) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("配置角色")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.primary)
+                        Text("\(character.rendererKind.displayName) · \(character.actions.count) 个动作")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Picker("", selection: actionConfigSelection) {
+                        ForEach(model.characters) { character in
+                            Text(character.name).tag(character.id)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 210)
+                }
+
+                Divider().overlay(Color.white.opacity(0.06))
+
+                if character.actions.isEmpty {
+                    SettingsInfoRow(
+                        icon: "exclamationmark.triangle",
+                        title: "没有动作",
+                        value: "这个角色没有可配置的动作。请检查资源目录是否包含有效动作。"
+                    )
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(PetHitArea.allCases, id: \.self) { area in
+                            ClickActionMappingRow(
+                                area: area,
+                                actions: character.actions,
+                                selection: Binding(
+                                    get: {
+                                        model.clickActionSelection(for: character, area: area) ?? ClickActionMappingRow.automaticValue
+                                    },
+                                    set: { value in
+                                        model.setClickAction(
+                                            value == ClickActionMappingRow.automaticValue ? nil : value,
+                                            for: character,
+                                            area: area
+                                        )
+                                    }
+                                ),
+                                resolvedAction: model.resolvedClickAction(for: character, area: area),
+                                onTest: {
+                                    model.testClickAction(for: character, area: area)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var actionConfigCharacter: PetCharacter {
+        let id = actionConfigCharacterID.isEmpty ? model.selectedCharacterID : actionConfigCharacterID
+        return model.characters.first { $0.id == id } ?? model.selectedCharacter
+    }
+
+    private var actionConfigSelection: Binding<String> {
+        Binding(
+            get: {
+                if actionConfigCharacterID.isEmpty {
+                    return model.selectedCharacterID
+                }
+                return actionConfigCharacterID
+            },
+            set: { actionConfigCharacterID = $0 }
+        )
     }
 
     private func pickResourceFolder(title: String, kind: PetRendererKind) {
@@ -787,6 +871,69 @@ private struct ResourceImportRow: View {
             }
             .buttonStyle(SettingsButtonStyle())
         }
+    }
+}
+
+private struct ClickActionMappingRow: View {
+    static let automaticValue = "__automatic__"
+
+    let area: PetHitArea
+    let actions: [String]
+    @Binding var selection: String
+    let resolvedAction: String?
+    let onTest: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(area.displayName)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+                Text(statusText)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .frame(width: 150, alignment: .leading)
+
+            Picker("", selection: $selection) {
+                Text("自动匹配").tag(Self.automaticValue)
+                ForEach(actions, id: \.self) { action in
+                    Text(action).tag(action)
+                }
+            }
+            .labelsHidden()
+            .frame(maxWidth: .infinity)
+
+            Button("测试") {
+                onTest()
+            }
+            .buttonStyle(SettingsButtonStyle())
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var icon: String {
+        switch area {
+        case .head: "face.smiling"
+        case .body: "figure.stand"
+        case .left: "arrow.left"
+        case .right: "arrow.right"
+        case .feet: "shoeprints.fill"
+        }
+    }
+
+    private var statusText: String {
+        if selection == Self.automaticValue {
+            return "当前：\(resolvedAction ?? "无匹配")"
+        }
+        return "已指定：\(selection)"
     }
 }
 

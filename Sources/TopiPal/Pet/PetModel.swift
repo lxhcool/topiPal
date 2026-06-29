@@ -27,6 +27,7 @@ final class PetModel: ObservableObject {
     @Published private(set) var lastNotificationMonitorEvent: String?
     @Published private(set) var smartTestResultMessage: String?
     @Published private(set) var activityContext: ActivityContext?
+    @Published private var clickActionMappings: [String: [String: String]]
     @Published private(set) var runtimeState = PetRuntimeState(
         mood: .calm,
         activity: .unknown,
@@ -80,10 +81,13 @@ final class PetModel: ObservableObject {
     )
 
     private static let characterKey = "Pet.SelectedCharacterID"
+    private static let clickActionMappingsKey = "Pet.ClickActionMappings.v1"
     private static let deliveredWeatherMomentsKey = "Pet.DeliveredWeatherMoments.v1"
     private static let deliveredLifeMomentsKey = "Pet.DeliveredLifeMoments.v1"
 
     init() {
+        clickActionMappings = Self.loadClickActionMappings()
+
         let savedID = UserDefaults.standard.string(forKey: Self.characterKey)
         if let savedID, PetAssetLibrary.characters.contains(where: { $0.id == savedID }) {
             selectedCharacterID = savedID
@@ -178,6 +182,50 @@ final class PetModel: ObservableObject {
         showBubble("已删除：\(character.name)")
     }
 
+    func clickActionSelection(for character: PetCharacter, area: PetHitArea) -> String? {
+        guard let action = clickActionMappings[character.id]?[area.rawValue],
+              character.actions.contains(action) else {
+            return nil
+        }
+        return action
+    }
+
+    func resolvedClickAction(for character: PetCharacter, area: PetHitArea) -> String? {
+        clickActionSelection(for: character, area: area) ?? character.action(for: area)
+    }
+
+    func setClickAction(_ action: String?, for character: PetCharacter, area: PetHitArea) {
+        var mappings = clickActionMappings
+        var characterMappings = mappings[character.id] ?? [:]
+
+        if let action, character.actions.contains(action) {
+            characterMappings[area.rawValue] = action
+        } else {
+            characterMappings.removeValue(forKey: area.rawValue)
+        }
+
+        if characterMappings.isEmpty {
+            mappings.removeValue(forKey: character.id)
+        } else {
+            mappings[character.id] = characterMappings
+        }
+
+        clickActionMappings = mappings
+        Self.saveClickActionMappings(mappings)
+    }
+
+    func testClickAction(for character: PetCharacter, area: PetHitArea) {
+        if selectedCharacterID != character.id {
+            selectedCharacterID = character.id
+            activeAction = character.defaultAction
+        }
+        guard let action = resolvedClickAction(for: character, area: area) else {
+            showBubble("这个区域还没有可用动作")
+            return
+        }
+        playAction(action)
+    }
+
     func handleTap(in area: PetHitArea) {
         let now = Date()
         if let lastTapDate, now.timeIntervalSince(lastTapDate) <= 3 {
@@ -199,7 +247,7 @@ final class PetModel: ObservableObject {
         interactionSequence += 1
         smartBubbleTask?.cancel()
 
-        if let action = selectedCharacter.action(for: area) {
+        if let action = resolvedClickAction(for: selectedCharacter, area: area) {
             playAction(action)
         }
     }
@@ -231,7 +279,8 @@ final class PetModel: ObservableObject {
             showBubble(PetMessageComposer.pointerFollowMessage(memory: messageMemory))
         }
 
-        if let action = selectedCharacter.action(for: .head) ?? selectedCharacter.action(for: .right) {
+        if let action = resolvedClickAction(for: selectedCharacter, area: .head)
+            ?? resolvedClickAction(for: selectedCharacter, area: .right) {
             playAction(action)
         }
     }
@@ -370,7 +419,7 @@ final class PetModel: ObservableObject {
 
     private func playNotificationAction(for appName: String) {
         let preferredAreas = notificationActionAreas(for: appName)
-        guard let action = preferredAreas.compactMap({ selectedCharacter.action(for: $0) }).first else {
+        guard let action = preferredAreas.compactMap({ resolvedClickAction(for: selectedCharacter, area: $0) }).first else {
             return
         }
         playAction(action, duration: 1_850_000_000)
@@ -499,7 +548,7 @@ final class PetModel: ObservableObject {
         var candidates: [(area: PetHitArea, action: String)] = []
 
         for area in preferredAreas {
-            guard let action = selectedCharacter.action(for: area),
+            guard let action = resolvedClickAction(for: selectedCharacter, area: area),
                   !isIdleAction(action),
                   !seenActions.contains(action) else { continue }
             seenActions.insert(action)
@@ -517,6 +566,19 @@ final class PetModel: ObservableObject {
 
     private func isIdleAction(_ action: String) -> Bool {
         action.localizedCaseInsensitiveContains("idle")
+    }
+
+    private static func loadClickActionMappings() -> [String: [String: String]] {
+        guard let data = UserDefaults.standard.data(forKey: clickActionMappingsKey),
+              let mappings = try? JSONDecoder().decode([String: [String: String]].self, from: data) else {
+            return [:]
+        }
+        return mappings
+    }
+
+    private static func saveClickActionMappings(_ mappings: [String: [String: String]]) {
+        guard let data = try? JSONEncoder().encode(mappings) else { return }
+        UserDefaults.standard.set(data, forKey: clickActionMappingsKey)
     }
 
     private func nextLifeMomentIfNeeded(now: Date = Date()) -> LifeMoment? {
