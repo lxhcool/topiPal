@@ -53,13 +53,13 @@ void topi40_Entry_dispose(_topi40_Entry *self) {
 	FREE(self);
 }
 
-static _SkinHashTableEntry *_SkinHashTableEntry_create(_topi40_Entry *entry) {
-	_SkinHashTableEntry *self = NEW(_SkinHashTableEntry);
+static _topi40_SkinHashTableEntry *_topi40_SkinHashTableEntry_create(_topi40_Entry *entry) {
+	_topi40_SkinHashTableEntry *self = NEW(_topi40_SkinHashTableEntry);
 	self->entry = entry;
 	return self;
 }
 
-static void _SkinHashTableEntry_dispose(_SkinHashTableEntry *self) {
+static void _topi40_SkinHashTableEntry_dispose(_topi40_SkinHashTableEntry *self) {
 	FREE(self);
 }
 
@@ -85,15 +85,15 @@ void topi40_spSkin_dispose(topi40_spSkin *self) {
 	}
 
 	{
-		_SkinHashTableEntry **currentHashtableEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
+		_topi40_SkinHashTableEntry **currentHashtableEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
 		int i;
 
 		for (i = 0; i < SKIN_ENTRIES_HASH_TABLE_SIZE; ++i, ++currentHashtableEntry) {
-			_SkinHashTableEntry *hashtableEntry = *currentHashtableEntry;
+			_topi40_SkinHashTableEntry *hashtableEntry = *currentHashtableEntry;
 
 			while (hashtableEntry) {
-				_SkinHashTableEntry *nextEntry = hashtableEntry->next;
-				_SkinHashTableEntry_dispose(hashtableEntry);
+				_topi40_SkinHashTableEntry *nextEntry = hashtableEntry->next;
+				_topi40_SkinHashTableEntry_dispose(hashtableEntry);
 				hashtableEntry = nextEntry;
 			}
 		}
@@ -108,8 +108,8 @@ void topi40_spSkin_dispose(topi40_spSkin *self) {
 }
 
 void topi40_spSkin_setAttachment(topi40_spSkin *self, int slotIndex, const char *name, topi40_spAttachment *attachment) {
-	_SkinHashTableEntry *existingEntry = 0;
-	_SkinHashTableEntry *hashEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable[(unsigned int) slotIndex % SKIN_ENTRIES_HASH_TABLE_SIZE];
+	_topi40_SkinHashTableEntry *existingEntry = 0;
+	_topi40_SkinHashTableEntry *hashEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable[(unsigned int) slotIndex % SKIN_ENTRIES_HASH_TABLE_SIZE];
 	while (hashEntry) {
 		if (hashEntry->entry->slotIndex == slotIndex && strcmp(hashEntry->entry->name, name) == 0) {
 			existingEntry = hashEntry;
@@ -129,9 +129,9 @@ void topi40_spSkin_setAttachment(topi40_spSkin *self, int slotIndex, const char 
 		SUB_CAST(_topi40_spSkin, self)->entries = newEntry;
 		{
 			unsigned int hashTableIndex = (unsigned int) slotIndex % SKIN_ENTRIES_HASH_TABLE_SIZE;
-			_SkinHashTableEntry **hashTable = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
+			_topi40_SkinHashTableEntry **hashTable = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
 
-			_SkinHashTableEntry *newHashEntry = _SkinHashTableEntry_create(newEntry);
+			_topi40_SkinHashTableEntry *newHashEntry = _topi40_SkinHashTableEntry_create(newEntry);
 			newHashEntry->next = hashTable[hashTableIndex];
 			SUB_CAST(_topi40_spSkin, self)->entriesHashTable[hashTableIndex] = newHashEntry;
 		}
@@ -139,7 +139,7 @@ void topi40_spSkin_setAttachment(topi40_spSkin *self, int slotIndex, const char 
 }
 
 topi40_spAttachment *topi40_spSkin_getAttachment(const topi40_spSkin *self, int slotIndex, const char *name) {
-	const _SkinHashTableEntry *hashEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable[(unsigned int) slotIndex % SKIN_ENTRIES_HASH_TABLE_SIZE];
+	const _topi40_SkinHashTableEntry *hashEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable[(unsigned int) slotIndex % SKIN_ENTRIES_HASH_TABLE_SIZE];
 	while (hashEntry) {
 		if (hashEntry->entry->slotIndex == slotIndex && strcmp(hashEntry->entry->name, name) == 0)
 			return hashEntry->entry->attachment;
@@ -258,15 +258,15 @@ void topi40_spSkin_clear(topi40_spSkin *self) {
 	SUB_CAST(_topi40_spSkin, self)->entries = 0;
 
 	{
-		_SkinHashTableEntry **currentHashtableEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
+		_topi40_SkinHashTableEntry **currentHashtableEntry = SUB_CAST(_topi40_spSkin, self)->entriesHashTable;
 		int i;
 
 		for (i = 0; i < SKIN_ENTRIES_HASH_TABLE_SIZE; ++i, ++currentHashtableEntry) {
-			_SkinHashTableEntry *hashtableEntry = *currentHashtableEntry;
+			_topi40_SkinHashTableEntry *hashtableEntry = *currentHashtableEntry;
 
 			while (hashtableEntry) {
-				_SkinHashTableEntry *nextEntry = hashtableEntry->next;
-				_SkinHashTableEntry_dispose(hashtableEntry);
+				_topi40_SkinHashTableEntry *nextEntry = hashtableEntry->next;
+				_topi40_SkinHashTableEntry_dispose(hashtableEntry);
 				hashtableEntry = nextEntry;
 			}
 

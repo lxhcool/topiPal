@@ -38,8 +38,9 @@ elif [[ "${2:-}" == "--install-system" ]]; then
     INSTALL_APP_DIR="/Applications/${APP_NAME}.app"
 fi
 
-export CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.clang-cache/ModuleCache"
-export SWIFTPM_MODULECACHE_OVERRIDE="$ROOT_DIR/.build-cache/ModuleCache"
+PROJECT_CACHE_DIR="$(basename "$ROOT_DIR")"
+export CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.clang-cache/$PROJECT_CACHE_DIR/ModuleCache"
+export SWIFTPM_MODULECACHE_OVERRIDE="$ROOT_DIR/.build-cache/$PROJECT_CACHE_DIR/ModuleCache"
 mkdir -p "$CLANG_MODULE_CACHE_PATH" "$SWIFTPM_MODULECACHE_OVERRIDE"
 
 if [[ "$CONFIGURATION" == "release" ]]; then

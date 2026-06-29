@@ -73,16 +73,16 @@ struct _topi40_Entry {
 	_topi40_Entry *next;
 };
 
-typedef struct _SkinHashTableEntry _SkinHashTableEntry;
-struct _SkinHashTableEntry {
+typedef struct _topi40_SkinHashTableEntry _topi40_SkinHashTableEntry;
+struct _topi40_SkinHashTableEntry {
 	_topi40_Entry *entry;
-	_SkinHashTableEntry *next;
+	_topi40_SkinHashTableEntry *next;
 };
 
 typedef struct {
 	topi40_spSkin super;
 	_topi40_Entry *entries; /* entries list stored for getting attachment name by attachment index */
-	_SkinHashTableEntry *entriesHashTable[SKIN_ENTRIES_HASH_TABLE_SIZE]; /* hashtable for fast attachment lookup */
+	_topi40_SkinHashTableEntry *entriesHashTable[SKIN_ENTRIES_HASH_TABLE_SIZE]; /* hashtable for fast attachment lookup */
 } _topi40_spSkin;
 
 SP_API topi40_spSkin *topi40_spSkin_create(const char *name);
